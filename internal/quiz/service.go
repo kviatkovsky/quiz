@@ -60,6 +60,10 @@ func (s *QuizService) GetComparisonResult() string {
 	s.resultsLock.Lock()
 	defer s.resultsLock.Unlock()
 
+	if len(s.results) == 0 {
+		return "No results found"
+	}
+
 	userScore := s.results[len(s.results)-1]
 	higherCount := 0
 
