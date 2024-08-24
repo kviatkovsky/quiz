@@ -41,7 +41,7 @@ func (s *QuizService) GetQuestions() []Question {
 func (s *QuizService) SubmitAnswers(answers *UserAnswers) *Result {
 	correctCount := 0
 	for i, answer := range answers.Answers {
-		if s.questions[i].Correct == answer {
+		if s.questions[i].Correct == answer-1 {
 			correctCount++
 		}
 	}
