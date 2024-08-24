@@ -1,32 +1,35 @@
 package cmd
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"strconv"
 
+	"github.com/kviatkovsky/quiz/internal/api"
 	"github.com/kviatkovsky/quiz/internal/quiz"
-
 	"github.com/spf13/cobra"
 )
 
-func SubmitCmd(quizService *quiz.QuizService) *cobra.Command {
+func SubmitCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "submit",
 		Short: "Submit your quiz answers interactively",
 		Run: func(cmd *cobra.Command, args []string) {
-			var userAnswers []int
-			questions := quizService.GetQuestions()
-			for i, q := range questions {
-				var answer int
-				fmt.Printf("question-%d %s: \n", i+1, q.Question)
-				for key, value := range q.Answers {
-					fmt.Printf("%v: %s\n", key+1, value)
-				}
-				for {
-					if isValidAnswer(&answer) {
-						break
-					}
-				}
+			if len(args) == 0 {
+				fmt.Println("Please provide your answers as command-line arguments.")
+				return
+			}
 
+			var userAnswers []int
+			for _, arg := range args {
+				answer, err := strconv.Atoi(arg)
+				if err != nil {
+					fmt.Printf("Invalid answer: %s. Please provide numeric answers.\n", arg)
+					return
+				}
 				userAnswers = append(userAnswers, answer)
 			}
 
@@ -34,23 +37,50 @@ func SubmitCmd(quizService *quiz.QuizService) *cobra.Command {
 				Answers: userAnswers,
 			}
 
-			result := quizService.SubmitAnswers(&answers)
+			result := submitAnswers(&answers)
 			fmt.Printf("You got %d out of %d correct!\n", result.CorrectAnswers, result.TotalQuestions)
 		},
 	}
 }
 
-func isValidAnswer(answer *int) bool {
-	_, err := fmt.Scan(answer)
+func submitAnswers(answers *quiz.UserAnswers) quiz.Result {
+	var submitResult quiz.Result
+
+	url := fmt.Sprintf("%s%s", api.BaseUrl, api.PostSubmitEndpoint)
+
+	jsonData, err := json.Marshal(answers)
 	if err != nil {
-		fmt.Printf("Invalid input, please enter a number.\n")
-		return false
+		fmt.Printf("Error marshaling JSON: %v\n", err)
+		return submitResult
 	}
 
-	if *answer < 1 || *answer > 4 {
-		fmt.Printf("Invalid answer, please enter a number between 1 and 4\n")
-		return false
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Printf("Error creating request: %v\n", err)
+		return submitResult
 	}
 
-	return true
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("Error sending request: %v\n", err)
+		return submitResult
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Error reading response: %v\n", err)
+		return submitResult
+	}
+
+	err = json.Unmarshal(body, &submitResult)
+	if err != nil {
+		fmt.Printf("Error unmarshaling JSON: %v\n", err)
+		return submitResult
+	}
+
+	return submitResult
 }

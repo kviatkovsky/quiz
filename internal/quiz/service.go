@@ -1,6 +1,7 @@
 package quiz
 
 import (
+	"fmt"
 	"strconv"
 	"sync"
 )
@@ -74,5 +75,8 @@ func (s *QuizService) GetComparisonResult() string {
 	}
 
 	percentage := (float64(higherCount) / float64(len(s.results))) * 100
-	return "You were better than " + strconv.FormatFloat(percentage, 'f', 2, 64) + "% of all quizzers"
+	return fmt.Sprintf(
+		"You were better than %s%% of all quizzers",
+		strconv.FormatFloat(percentage, 'f', 2, 64),
+	)
 }

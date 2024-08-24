@@ -1,10 +1,9 @@
 package quiz
 
-// Question represents a quiz question
 type Question struct {
 	Question string   `json:"question"`
 	Answers  []string `json:"answers"`
-	Correct  int      `json:"-"` // This should not be exposed via API
+	Correct  int      `json:"-"`
 }
 
 // Result represents the result of the quiz
