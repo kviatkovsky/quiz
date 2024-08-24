@@ -22,17 +22,13 @@ func SubmitCmd() *cobra.Command {
 				fmt.Println("Please provide your answers as command-line arguments.")
 				return
 			}
-
-			var userAnswers []int
-			for _, arg := range args {
-				answer, err := strconv.Atoi(arg)
-				if err != nil {
-					fmt.Printf("Invalid answer: %s. Please provide numeric answers.\n", arg)
-					return
-				}
-				userAnswers = append(userAnswers, answer)
+			
+			userAnswers, err := validateAnswers(args)
+			if err != nil {
+				fmt.Println(err)
+				return
 			}
-
+			
 			answers := quiz.UserAnswers{
 				Answers: userAnswers,
 			}
@@ -41,6 +37,25 @@ func SubmitCmd() *cobra.Command {
 			fmt.Printf("You got %d out of %d correct!\n", result.CorrectAnswers, result.TotalQuestions)
 		},
 	}
+}
+
+func validateAnswers(args []string) ([]int, error) {
+	var userAnswers []int
+
+	for _, arg := range args {
+		answer, err := strconv.Atoi(arg)
+		if err != nil {
+			return nil, fmt.Errorf("invalid answer: %s. Please provide numeric answers", arg)
+		}
+
+		if answer < 1 || answer > 4 {
+			return nil, fmt.Errorf("invalid answer: %d, please enter a number between 1 and 4", answer)
+		}
+
+		userAnswers = append(userAnswers, answer)
+	}
+
+	return userAnswers, nil
 }
 
 func submitAnswers(answers *quiz.UserAnswers) quiz.Result {
