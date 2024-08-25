@@ -16,19 +16,22 @@ import (
 func SubmitCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "submit",
-		Short: "Submit your quiz answers interactively",
+		Short: "Submit your quiz answers",
 		Run: func(cmd *cobra.Command, args []string) {
-			if len(args) == 0 {
-				fmt.Println("Please provide your answers as command-line arguments.")
+			questionsCount := len(getQuestions())
+			if len(args) != questionsCount {
+				fmt.Println(
+					fmt.Errorf("please provide your answers for all %v questions, your provide only %v", questionsCount, len(args)),
+				)
 				return
 			}
-			
+
 			userAnswers, err := validateAnswers(args)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
-			
+
 			answers := quiz.UserAnswers{
 				Answers: userAnswers,
 			}
